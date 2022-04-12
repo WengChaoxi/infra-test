@@ -1,3 +1,5 @@
+def gv
+
 pipeline {
     agent any
     environment {
@@ -11,10 +13,19 @@ pipeline {
 
     stages {
         
+        stage("Init") {
+            steps {
+                script {
+                    gv = load "script.groovy"
+                }
+            }
+        }
+
         stage("Build") {
             steps {
-                echo 'Building...'
-                echo "A env variable ${_VAR}"
+                script {
+                    gv.Build()
+                }
             }
         }
 
@@ -25,26 +36,30 @@ pipeline {
                 }
             }
             steps {
-                echo 'Testing...'
+                script {
+                    gv.Test()
+                }
             }
         }
 
         stage("Deploy") {
             steps {
-                echo 'Deploying...'
+                script {
+                    gv.Test()
+                }
             }
         }
     }
 
     post {
         always {
-            echo 'echo post: always'
+            sh 'echo post: always'
         }
         success {
-            echo 'echo post: success'
+            sh 'echo post: success'
         }
         failure {
-            echo 'echo post: failure'
+            sh 'echo post: failure'
         }
     }
 }
