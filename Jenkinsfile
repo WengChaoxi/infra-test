@@ -21,10 +21,19 @@ pipeline {
             }
         }
 
+        stage("Push artifact") {
+            steps {
+                sh 'mkdir -p archive'
+                sh 'echo "@##TEXT##@" > archive/test.txt'
+                sh "tar zcf test.tar.gz archive"
+                archiveArtifacts artifacts: 'test.tar.gz', fingerprint: true
+            }
+        }
+
         stage("Build") {
             steps {
                 script {
-                    gv.Build()
+                    gv.build()
                 }
             }
         }
@@ -32,12 +41,13 @@ pipeline {
         stage("Test") {
             when {
                 expression {
-                    BRANCH_NAME == 'wengchaoxi-jenkins-test' && params.executeTests
+                    // BRANCH_NAME == 'wengchaoxi-jenkins-test' && params.executeTests
+                    params.executeTests
                 }
             }
             steps {
                 script {
-                    gv.Test()
+                    gv.test()
                 }
             }
         }
@@ -45,14 +55,26 @@ pipeline {
         stage("Deploy") {
             steps {
                 script {
-                    gv.Test()
+                    gv.deploy()
                 }
+            }
+        }
+
+        stage("Pull artifact") {
+            steps {
+                copyArtifacts filter: 'test.tar.gz', fingerprintArtifacts: true, projectName: '${JOB_NAME}', selector: specific('${BUILD_NUMBER}')
+                sh '[ -d archive_new ] || mkdir archive_new'
+                sh 'tar zxf test.tar.gz --directory=archive_new'
+                sh 'cat archive_new/archive/test.txt'
             }
         }
     }
 
     post {
         always {
+            script {
+                cleanWs()
+            }
             sh 'echo post: always'
         }
         success {
