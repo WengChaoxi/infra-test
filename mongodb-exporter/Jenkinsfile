@@ -1,0 +1,69 @@
+#!/usr/bin/env groovy
+
+def getCPUArch(platform) {
+    int i = platform.lastIndexOf('/')
+    return i>0 ? platform.substring(i+1) : ''
+}
+
+pipeline {
+    agent {
+        label 'os:linux'
+    }
+    options {
+        skipDefaultCheckout()
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(
+            daysToKeepStr: '15',
+            artifactNumToKeepStr: '20'
+        ))
+        ansiColor('xterm')
+    }
+    parameters {
+        string(name: 'MONGODB_EXPORTER_VERSION',
+            defaultValue: '0.32.0',
+            description: 'MongoDB version for docker base image')
+
+        choice(name: 'BUILD_PLATFORM', 
+            choices: ['linux/arm', 'linux/arm64', 'linux/amd64'], 
+            description: 'Build platform for MongoDB exporter')
+    }
+    stages {
+        stage('Checkout') {
+            steps {
+                script {
+                    checkout scm
+                }
+            }
+        }
+        stage('build') {
+            steps {
+                script {
+                    assert params.MONGODB_EXPORTER_VERSION : "You must specify MONGODB_EXPORTER_VERSION"
+                    assert params.BUILD_PLATFORM : "You must specify BUILD_PLATFORM"
+                    def cpu_arch = getCPUArch(params.BUILD_PLATFORM)
+
+                    buildargs = [
+                        "MONGODB_EXPORTER_VERSION=${params.MONGODB_EXPORTER_VERSION}",
+                        "BUILD_PLATFORM=${params.BUILD_PLATFORM}",
+                        "CPU_ARCH=${cpu_arch}",
+                    ]
+
+                    tags = [
+                        "mongodb-exporter-${params.MONGODB_EXPORTER_VERSION}",
+                        "build-platform-${params.BUILD_PLATFORM}",
+                    ]
+
+                    dir("mongodb-exporter") {
+                        dockerBuild project: 'library', repo: 'mongodb-exporter', buildargs: buildargs, tags: tags, push: true, multiArch: true
+                    }
+
+                    currentBuild.displayName = params.MONGODB_EXPORTER_VERSION
+                    currentBuild.description = """
+mongodb-exporter ${params.MONGODB_EXPORTER_VERSION}
+build-platform ${params.BUILD_PLATFORM}
+"""
+                }
+            }
+        }
+    }
+}
