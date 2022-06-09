@@ -1,0 +1,51 @@
+#!/usr/bin/env groovy
+
+pipeline {
+    agent {
+        label 'os:linux'
+    }
+    options {
+        skipDefaultCheckout()
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(
+            daysToKeepStr: '15',
+            artifactNumToKeepStr: '20'
+        ))
+        ansiColor('xterm')
+    }
+    parameters {
+        string(name: 'MONGODB_EXPORTER_VERSION',
+            defaultValue: '0.32.0',
+            description: 'MongoDB Exporter version for docker base image')
+    }
+    stages {
+        stage('Checkout') {
+            steps {
+                script {
+                    checkout scm
+                }
+            }
+        }
+        stage('build') {
+            steps {
+                script {
+                    assert params.MONGODB_EXPORTER_VERSION : "You must specify MONGODB_EXPORTER_VERSION"
+
+                    buildargs = [
+                        "MONGODB_EXPORTER_VERSION=${params.MONGODB_EXPORTER_VERSION}",
+                    ]
+
+                    tags = [
+                        "${params.MONGODB_EXPORTER_VERSION}",
+                    ]
+
+                    dir("mongodb-exporter") {
+                        dockerBuild project: 'library', repo: 'mongodb-exporter', buildargs: buildargs, tags: tags, push: true, multiArch: true
+                    }
+
+                    currentBuild.displayName = params.MONGODB_EXPORTER_VERSION
+                }
+            }
+        }
+    }
+}
