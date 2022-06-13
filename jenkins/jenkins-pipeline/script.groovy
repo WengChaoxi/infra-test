@@ -1,13 +1,13 @@
-def build() {
+def Build() {
     echo 'Building...'
     echo "A env variable: ${_VAR}"
 }
 
-def test() {
+def Test() {
     echo 'Testing...'
 }
 
-def deploy() {
+def Deploy() {
     echo 'Deploying...'
     echo "Version: ${params.VERSION}"
 }

@@ -1,4 +1,16 @@
-def gv
+def Build() {
+    echo 'Building...'
+    echo "A env variable: ${_VAR}"
+}
+
+def Test() {
+    echo 'Testing...'
+}
+
+def Deploy() {
+    echo 'Deploying...'
+    echo "Version: ${params.VERSION}"
+}
 
 pipeline {
     agent any
@@ -12,14 +24,6 @@ pipeline {
     }
 
     stages {
-        
-        stage("Init") {
-            steps {
-                script {
-                    gv = load "script.groovy"
-                }
-            }
-        }
 
         stage("Push artifact") {
             steps {
@@ -33,7 +37,7 @@ pipeline {
         stage("Build") {
             steps {
                 script {
-                    gv.build()
+                    Build()
                 }
             }
         }
@@ -47,7 +51,7 @@ pipeline {
             }
             steps {
                 script {
-                    gv.test()
+                    Test()
                 }
             }
         }
@@ -55,7 +59,7 @@ pipeline {
         stage("Deploy") {
             steps {
                 script {
-                    gv.deploy()
+                    Deploy()
                 }
             }
         }
