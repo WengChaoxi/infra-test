@@ -1,1 +1,7 @@
-*.swp
+.terraform
+.terragrunt-cache
+
+*.tfstate
+*.tfstate.backup
+
+terraform.tfvars
