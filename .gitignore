@@ -4,4 +4,8 @@
 *.tfstate
 *.tfstate.backup
 
+override.tf
+
 terraform.tfvars
+
+.terraform.lock.hcl
